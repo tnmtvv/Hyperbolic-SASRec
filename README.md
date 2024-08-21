@@ -27,7 +27,7 @@ The list of accepted input arguments is the following:
 - `model` The name of the model.
 - `dataset` The name of the dataset. Note that when the --pcore setting is provided (default for Amazon datasets as they are 5-core in the source storage), the name of the dataset must be appended with the pcore value (i.e., 5 by default). For example, the Amazon `Books` datasets must be referenced as `Books_5`, if a different pcore value was not explicitly provided.
 - `time_offset` A real number between zero and one. Used for splitting sequential observations into train and test. The time interval of observations is split in proportion to the time offset, which is simply a quantile of observations up to the splitting timepoint. 
-- `config_path` The path to the config file. Sample configs for various models are provided in the \lstinline{grid} folder. For example, to use the default config for `hypsasrec`, use the option `--config_path="./grids/hypsasrec.py"`.
+- `config_path` The path to the config file. Sample configs for various models are provided in the ```grid``` folder. For example, to use the default config for `hypsasrec`, use the option `--config_path="./grids/hypsasrec.py"`.
 - `grid_steps` A positive integer number. Determines the total number of configurations to be tried during the grid search.
 - `check_best` Include this parameter, without any parameter values, to see the final results on the test data for the best configuration found.
 
