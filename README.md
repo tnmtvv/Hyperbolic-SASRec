@@ -43,4 +43,4 @@ python tune.py --model=sasrec --dataset=ml-1m --time_offset=0.95  --config_path=
 ```
 
 ## Reproducibility
-Please see the `conda.yml` file for the vesrions of the Python packages used in the experiments.
+Please see the `conda.yml` file for the vesrions of the Python packages used in the experiments. The best configs for several datasets are provided in ```best``` folder.
