@@ -61,7 +61,7 @@ class SASRec(nn.Module):
     def log2feats(self, log_seqs):
         device = log_seqs.device
         seqs = self.item_emb(log_seqs)
-        seqs *= self.item_emb.embedding_dim ** 0.5
+        seqs *= self.item_emb.embedding_dim ** 0.5 # типа корень из variance 
         positions = np.tile(np.arange(log_seqs.shape[1]), [log_seqs.shape[0], 1])
         seqs += self.pos_emb(torch.LongTensor(positions).to(device))
         seqs = self.emb_dropout(seqs)

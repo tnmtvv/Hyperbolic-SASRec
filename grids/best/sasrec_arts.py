@@ -17,7 +17,9 @@ def generate_config(trial: optuna.Trial) -> dict:
         seed=0,
         sampler_seed=789,
         device="cuda",
-        max_epochs=400,
+        max_epochs=80,
+        geom="ball",
+        bias=True,
         c=0.02890294854523254,  # obtained from SVD embeddings at 1e^{-12} tolerance
     )
     config = generate_best_config(fixed_params)

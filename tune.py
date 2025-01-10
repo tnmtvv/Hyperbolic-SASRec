@@ -4,6 +4,7 @@ from functools import singledispatchmethod
 from typing import Union
 
 import optuna
+import torch
 from optuna.study import MaxTrialsCallback
 from optuna.trial import TrialState
 
@@ -109,7 +110,8 @@ class Objective:
         check_step_replacement(trial)
         config = get_trial_config(trial)
         logger.info(f'Running test trial with configuration: {config}')
-        self.train_validate(config, self.evaluator)
+        # self.train_validate(config, self.evaluator)
+        self.train_validate(config, self.evaluator, model_save=True)
         logger.info(f'Average evaluation time: {show_average_time(self.evaluator.evaluation_time)}')
         self.results = self.evaluator.most_recent_results
         score = self.results.loc[self.target_metric, 'score']
@@ -121,6 +123,7 @@ if __name__ == "__main__":
     ts = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
     study_name = run_args.study_name or f'{run_args.model}_{run_args.dataset}_{run_args.target_metric}_{ts}'
     storage_name = get_storage_name(run_args.storage, study_name)
+    print(storage_name)
 
     if run_args.exhaustive:
         sampler = full_grid_sampler(run_args.config_path)
@@ -128,6 +131,8 @@ if __name__ == "__main__":
     else:
         sampler = optuna.samplers.RandomSampler()
 
+    # storage = optuna.storages.InMemoryStorage()
+    # study_name=run_args.study_name,
     study = optuna.create_study(
         load_if_exists = True,
         study_name = study_name,
@@ -146,6 +151,7 @@ if __name__ == "__main__":
         ],
         n_trials = run_args.grid_steps * defaults.max_attempts_multiplier if run_args.grid_steps else None
     )
+    
 
     if run_args.check_best: # see test scores for current best configuration
         test_trial = create_test_trial(study)
@@ -155,3 +161,4 @@ if __name__ == "__main__":
         log_attributes(test_objective.evaluator.results, test_trial)  # make sure to log current results
         if run_args.dump_results:
             dump_trial_results(test_trial, f'{study_name}_TEST')
+    

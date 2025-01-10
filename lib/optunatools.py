@@ -321,11 +321,14 @@ def load_config(study_name: str) -> list:
 
 
 def get_storage_name(storage_db: str, study_name: str) -> str:
+
     if storage_db == 'sqlite':
         storage_name = os.path.join(defaults.data_dir, f'results/{study_name}.db')
         return f'{storage_db}:///{storage_name}'
     if storage_db == 'redis': # "redis://127.0.0.1:6379/db"
         return f'{storage_db}://localhost:6379/{study_name}'
+    # else:
+    #     return os.path.join(defaults.data_dir, f'results/{study_name}.txt')
 
 
 def check_step_replacement(trial: Union[optuna.trial.FrozenTrial, optuna.trial.FixedTrial]) -> None:

@@ -11,12 +11,14 @@ from lib.models.learning import trainer
 from lib.evaluation import Evaluator
 
 
-def train_validate(config: dict, evaluator: Evaluator) -> None:
+def train_validate(config: dict, evaluator: Evaluator, model_save=False) -> None:
     dataset = evaluator.dataset
     n_items = len(dataset.item_index)
     fix_torch_seed(config.get('seed', None))
     model = SASRecModel(config, n_items)
     model.fit(dataset.train, evaluator)
+    if model_save:
+        torch.save(model._model.state_dict(), f'./data/results/models/ml1m_best_sasrec_model_state_dict.pt')
 
 
 class SASRecModel(RecommenderModel):

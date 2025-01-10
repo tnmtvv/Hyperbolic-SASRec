@@ -8,18 +8,22 @@ from lib.models.base import RecommenderModel
 from lib.models.learning import trainer
 from lib.evaluation import Evaluator
 from lib.models.sasrec.sampler import packed_sequence_batch_sampler
+from geoopt import PoincareBallExact
 
 from .source import HypSASRec
 
 
-def train_validate(config: dict, evaluator: Evaluator) -> None:
+def train_validate(config: dict, evaluator: Evaluator, model_save=False) -> None:
     dataset = evaluator.dataset
     n_items = len(dataset.item_index)
     fix_torch_seed(config.get('seed', None))
     model = HypSASRecModel(config, n_items)
     model.fit(dataset.train, evaluator)
-    # numpy_arr = model.item_emb.weight.cpu().detach().numpy()
-    # np.save('emb_s/lux_emb.npy', numpy_arr)
+    model_save = config.get('model_save', False)
+    num_items = model._model.scaler.cpu().detach().numpy().shape[0]
+    print(num_items)
+    if model_save:
+        torch.save(model._model.state_dict(), f'/workspace/data/results/models/ml1m_hypsasrec_model_state_dict_{num_items}.pt')
 
 class HypSASRecModel(RecommenderModel):
     def __init__(self, config: dict, n_items: int):
@@ -27,7 +31,21 @@ class HypSASRecModel(RecommenderModel):
         self.config = config
         self.device = get_torch_device(self.config.pop('device', None))
         self._model = HypSASRec(self.config, self.n_items).to(self.device)
+        num_items = self._model.scaler.cpu().detach().numpy().shape[0]
+
+        take_from_pretrained = self.config.pop('pretrained', False)
+        if take_from_pretrained:
+            pretrained_model_path = f"./data/results/models/ml1m_hypsasrec_model_state_dict_{num_items}.pt"
+            pretrained_state_dict = torch.load(pretrained_model_path)
+
+            self._model.load_state_dict(pretrained_state_dict, strict=False)
+
+            for param in self._model.parameters():
+                param.requires_grad = False
+            self._model.c.requires_grad = True
+
         self.criterion = nn.CrossEntropyLoss(ignore_index=self._model.pad_token).to(self.device)
+
         self.optimizer = torch.optim.Adam(
             self._model.parameters(), lr=self.config['learning_rate'], betas=(0.9, 0.98)
         )
@@ -92,6 +110,12 @@ class HypSASRecModel(RecommenderModel):
                 optimizer.step()
                 optimizer.zero_grad()
                 loss += batch_loss.item()
+        # # self.c = torch.tensor(config['c'])
+        if model.geom == "ball":
+            with open('./data/results/curvature.txt', 'a') as f:
+                f.write(f"{1/model.c} \n")
+            ball = PoincareBallExact(c=1/model.c)
+            self.manifold = ball 
         model.eval()
         return loss
 
@@ -128,7 +152,7 @@ class HypSASRecModel(RecommenderModel):
                 dtype = torch.int64,
                 device = device
             )
-            log_seqs = torch.as_strided(pad_seq[-n_targets-maxlen:], (n_targets+1, maxlen), (1, 1))
+            log_seqs = torch.as_strided(pad_seq[-n_targets-maxlen:], (n_targets+1, maxlen), (1, 1)) # двигаем макслен 
             log_feats = model.log2feats(log_seqs)
             hyp_feats = model.manifold.expmap0(log_feats[:, -1, :]) # only use the final sequence state            
             logits = model.poincare_hyperplane(hyp_feats)

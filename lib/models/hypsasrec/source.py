@@ -9,10 +9,16 @@ class HypSASRec(SASRec):
     def __init__(self, config, item_num):
         super().__init__(config, item_num)
 
+        train_curv = config.get('train_curv', False)
+        print(f"train_curv: {train_curv}")
+        if train_curv:
+            self.c = nn.Parameter(torch.as_tensor(1.0))
+            self.c.requires_grad = True
+        else:
+            self.c = torch.as_tensor(1.0)
         self.geom = config['geom']
-        self.c = torch.tensor(config['c'])
         if self.geom == "ball":
-            ball = PoincareBallExact(c=config['c'])
+            ball = PoincareBallExact(c=self.c)
             self.manifold = ball
             self.scaler = nn.Parameter(
                 torch.zeros(self.item_emb.num_embeddings),

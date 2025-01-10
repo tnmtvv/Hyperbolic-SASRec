@@ -18,7 +18,7 @@ max_test_interactions = 50_000
 
 
 # ========= MODEL-RELEATED =========
-validation_interval = 20 # frequency of validation for iterative models; 1 means validate on each iteration
+validation_interval = 5 # frequency of validation for iterative models; 1 means validate on each iteration
 
 
 # ========= STUDY-RELEATED =========

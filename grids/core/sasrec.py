@@ -14,6 +14,6 @@ fixed_params = dict(
     seed = 0,
     sampler_seed = 789,
     device = None,
-    max_epochs = 400,
+    max_epochs = 300,
     # step_replacement = None, # during tests, max value will be replaced with an optimal one
 )

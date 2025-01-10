@@ -10,6 +10,8 @@ from polara.tools.timing import track_time
 
 from lib.data.processor import DataSet
 from lib.models.base import RecommenderModel
+# from lib.models.hypsasrec.source import HypSASRec
+# from lib.models.hypsasrecb.source import HypSASRecBCE
 
 
 class Evaluator:
@@ -151,6 +153,12 @@ def evaluate_on_sequences(model, dataset, topn=10):
     mrr = cum_reciprocal_ranks / total_count
     dcg = cum_discounts / total_count
     cov = len(unique_recommendations) / len(dataset.item_index)
+    # if isinstance(model, HypSASRec) or isinstance(model, HypSASRecBCE):
+    #     results = pd.DataFrame(
+    #         data = {'score': [hr, mrr, dcg, cov], 'curv':[model.c]},
+    #         index = [f'{metric}@{topn}' for metric in ['HR', 'MRR', 'NDCG', 'COV']]
+    #     )
+    # else:
     results = pd.DataFrame(
         data = {'score': [hr, mrr, dcg, cov]},
         index = [f'{metric}@{topn}' for metric in ['HR', 'MRR', 'NDCG', 'COV']]
