@@ -20,7 +20,11 @@ def generate_config(trial: optuna.Trial) -> dict:
         max_epochs=80,
         geom="ball",
         bias=True,
-        c=0.02890294854523254,  # obtained from SVD embeddings at 1e^{-12} tolerance
+        # c=0.02890294854523254,  # obtained from SVD embeddings at 1e^{-12} tolerance
+        c=1.0,
+        model_save=False,
+        pretrained=False,
+        train_curv=True
     )
     config = generate_best_config(fixed_params)
     return config

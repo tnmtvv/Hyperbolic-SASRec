@@ -1,6 +1,9 @@
 import torch
 import torch.nn as nn
 from geoopt import PoincareBallExact
+import matplotlib.pyplot as plt
+import numpy as np
+import os
 
 from lib.models.sasrec.source import SASRec
 
@@ -10,15 +13,16 @@ class HypSASRec(SASRec):
         super().__init__(config, item_num)
 
         train_curv = config.get('train_curv', False)
-        print(f"train_curv: {train_curv}")
-        if train_curv:
-            self.c = nn.Parameter(torch.as_tensor(1.0))
-            self.c.requires_grad = True
-        else:
-            self.c = torch.as_tensor(1.0)
+        
+        self.epoch = 0
+        self.hyp_embs = []
+
         self.geom = config['geom']
+        self.c = torch.tensor(config['c'])
         if self.geom == "ball":
-            ball = PoincareBallExact(c=self.c)
+            print(f"learnable: {train_curv}")
+            ball = PoincareBallExact(c=float(self.c), learnable=train_curv)
+            print(f"curvature: {ball.c}")
             self.manifold = ball
             self.scaler = nn.Parameter(
                 torch.zeros(self.item_emb.num_embeddings),
@@ -27,9 +31,11 @@ class HypSASRec(SASRec):
         else:
             raise NotImplementedError
 
+
     def forward(self, log_seqs):
         log_feats = self.log2feats(log_seqs) # batch x seq.length x emb.dim
         hyp_feats = self.manifold.expmap0(log_feats)
+        self.hyp_embs.append(hyp_feats)
         logits = self.poincare_hyperplane(hyp_feats) # batch x seq.length x num.items
         return logits
 
@@ -37,7 +43,7 @@ class HypSASRec(SASRec):
         weight = self.item_emb.weight
         w_norm = weight.norm(dim=-1)
         w_unit = weight / w_norm.unsqueeze(-1)
-        return unidirectional_poincare_mlr(hyp_feats, w_norm, w_unit, self.scaler, self.c)
+        return unidirectional_poincare_mlr(hyp_feats, w_norm, w_unit, self.scaler, self.manifold.c)
 
 
 @torch.jit.script

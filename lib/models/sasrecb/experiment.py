@@ -11,12 +11,18 @@ from lib.evaluation import Evaluator
 from .source import SASRecCE
 
 
-def train_validate(config: dict, evaluator: Evaluator) -> None:
+def train_validate(config: dict, evaluator: Evaluator, model_save=False) -> None:
     dataset = evaluator.dataset
     n_items = len(dataset.item_index)
     fix_torch_seed(config.get('seed', None))
     model = SASRecCEModel(config, n_items)
     model.fit(dataset.train, evaluator)
+    num_items = model._model.item_emb.weight.cpu().detach().numpy().shape[0]
+    model_save = config.get('model_save', False)
+    dataset_name = config.get('dataset_name', False)
+    print(f"model_save: {model_save}")
+    if model_save:
+        torch.save(model._model.state_dict(), f'./data/results/models/{dataset_name}_best_sasrecb_model_state_dict_{num_items}.pt')
 
 
 class SASRecCEModel(RecommenderModel):
@@ -62,36 +68,6 @@ class SASRecCEModel(RecommenderModel):
 
         self.n_batches = (len(sizes) - 1) // self.batch_size
         trainer(self, evaluator)
-
-    def train_epoch(self):
-        model = self.model
-        criterion, optimizer, sampler, device, n_batches = [
-            getattr(self, a) for a in ['criterion', 'optimizer', 'sampler', 'device', 'n_batches']
-        ]
-        l2_emb = self.config['l2_emb']
-        as_tensor = partial(torch.as_tensor, device=device)
-
-        loss = 0
-        model.train()
-        for index in range(n_batches):
-            _, inputs, target, _ = next(sampler)
-            # convert batch data into torch tensors
-            inputs = as_tensor(inputs, dtype=torch.int32) # batch x seq.len
-            target = as_tensor(target, dtype=torch.long)  # batch x seq.len, CrossEntropy requires `long` ints
-            # need to permute output to comply with CrossEntropy inputs shape requirement
-            logits = model(inputs).permute(0, 2, 1)  # batch x num.items x seq.len
-            batch_loss = criterion(logits, target)
-            batch_loss = batch_loss / self.gradient_accumulation_steps
-            if l2_emb != 0:
-                for param in model.item_emb.parameters():
-                    batch_loss += l2_emb * torch.norm(param)**2
-            batch_loss.backward()
-            if (index + 1) % self.gradient_accumulation_steps == 0:
-                optimizer.step()
-                optimizer.zero_grad()
-                loss += batch_loss.item()
-        model.eval()
-        return loss
 
 
     def predict(self, seq, user):

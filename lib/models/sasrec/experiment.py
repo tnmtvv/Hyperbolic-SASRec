@@ -17,8 +17,11 @@ def train_validate(config: dict, evaluator: Evaluator, model_save=False) -> None
     fix_torch_seed(config.get('seed', None))
     model = SASRecModel(config, n_items)
     model.fit(dataset.train, evaluator)
+    num_items = model._model.item_emb.weight.cpu().detach().numpy().shape[0]
+    model_save = config.get('model_save', False)
+    print(f"model_save: {model_save}")
     if model_save:
-        torch.save(model._model.state_dict(), f'./data/results/models/ml1m_best_sasrec_model_state_dict.pt')
+        torch.save(model._model.state_dict(), f'./data/results/models/dig_best_sasrec_model_state_dict_{num_items}.pt')
 
 
 class SASRecModel(RecommenderModel):
@@ -40,6 +43,8 @@ class SASRecModel(RecommenderModel):
 
     def fit(self, data: tuple, evaluator: Evaluator):
         indices, sizes = data
+        n_users = len(sizes) - 1
+        self.users_to_track = np.random.randint(n_users, size=100)
         self.sampler = packed_sequence_batch_sampler(
             indices, sizes, self.n_items,
             batch_size = self.config['batch_size'],

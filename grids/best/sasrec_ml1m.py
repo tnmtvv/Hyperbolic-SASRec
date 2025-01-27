@@ -4,11 +4,11 @@ from grids.core import generate_best_config
 
 def generate_config(trial: optuna.Trial) -> dict:
     fixed_params = dict(
-        # batch_size=128,
-        batch_size=512,
+        batch_size=128,
+        # batch_size=512,
         learning_rate=0.005,
-        hidden_units=128,
-        # hidden_units=32,
+        # hidden_units=128,
+        hidden_units=32,
         num_blocks=3,
         # dropout_rate=0.2,
         dropout_rate=0.4,
@@ -21,12 +21,13 @@ def generate_config(trial: optuna.Trial) -> dict:
         device="cuda",
         geom="ball",
         bias=True,
-        max_epochs=200,
+        max_epochs=5,
         # c=0.015283691692054992,  # obtained from SVD embeddings at 1e^{-12} tolerance
-        c=1,  # obtained from SVD embeddings at 1e^{-12} tolerance,
+        # c=1,  # obtained from SVD embeddings at 1e^{-12} tolerance,
+        c=1,
         model_save=False,
-        pretrained=True,
-        train_curv=True
+        pretrained=False,
+        train_curv=False
 
     )
     config = generate_best_config(fixed_params)
